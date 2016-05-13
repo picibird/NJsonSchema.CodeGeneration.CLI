@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25123.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "nJsonSchema.Console", "nJsonSchema.Console\nJsonSchema.Console.csproj", "{65FF4E37-A37A-45CC-9192-5496ACF7ADD2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NJsonSchema.CodeGeneration.CLI", "NJsonSchema.CodeGeneration.CLI\NJsonSchema.CodeGeneration.CLI.csproj", "{65FF4E37-A37A-45CC-9192-5496ACF7ADD2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

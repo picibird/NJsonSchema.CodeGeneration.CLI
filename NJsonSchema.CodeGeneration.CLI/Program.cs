@@ -27,7 +27,7 @@ namespace nJsonSchema.Console
             DirectoryArgument sourceDirArg = new DirectoryArgument('s', "source", "source directory with json schema files")
             {
                 Optional = false,
-                DirectoryMustExist = false
+                DirectoryMustExist = true
             };
             DirectoryArgument targetDirArg = new DirectoryArgument('t', "target", "target directory with typescript  files")
             {
@@ -44,13 +44,17 @@ namespace nJsonSchema.Console
             try
             {
                 parser.ParseCommandLine(args);
-                parser.ShowParsedArguments();
+                //parser.ShowParsedArguments();
                 if (!parser.ParsingSucceeded)
                     return;
             }
             catch (Exception e)
             {
+                System.Console.WriteLine("Exception parsing arguments:");
                 System.Console.WriteLine(e.Message);
+                parser.PrintUsage(System.Console.Out);
+                System.Console.WriteLine("press any key to continue");
+                System.Console.ReadKey();
                 return;
             }
 
@@ -66,8 +70,7 @@ namespace nJsonSchema.Console
             System.Console.WriteLine("found {0} json schema files", schemasFiles.Count());
             foreach (FileInfo schemafile in schemasFiles)
             {
-                var schemaName = Path.GetFileNameWithoutExtension(schemafile.Name);
-                System.Console.WriteLine("generating {0} ", schemaName + ".ts");
+                System.Console.WriteLine("generating from {0} to", schemafile.Name);
                 try
                 {
                     var schema = JsonSchema4.FromFile(schemafile.FullName);
@@ -84,7 +87,10 @@ namespace nJsonSchema.Console
                 }
                 
             }
-            
+            //exit
+            System.Console.WriteLine("Done!");
+            System.Console.WriteLine("Press any key to exit.");
+            System.Console.ReadKey();
         }
 
         private static void Save(DirectoryInfo source, DirectoryInfo target, FileInfo schema, string data, string fileExtension)
@@ -97,6 +103,7 @@ namespace nJsonSchema.Console
             {
                 sw.Write(data);
             }
+            System.Console.WriteLine(filePath);
         }
 
         static bool GetYesOrNoUserInput()
