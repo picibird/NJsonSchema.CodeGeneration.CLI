@@ -7,8 +7,8 @@
     <ProjectGuid>{65FF4E37-A37A-45CC-9192-5496ACF7ADD2}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>nJsonSchema.Console</RootNamespace>
-    <AssemblyName>nJsonSchema.Console</AssemblyName>
+    <RootNamespace>picibird.NJsonSchema.CodeGeneration.CLI</RootNamespace>
+    <AssemblyName>generateFromJsonSchema</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
