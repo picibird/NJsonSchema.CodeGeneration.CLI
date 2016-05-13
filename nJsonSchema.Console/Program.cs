@@ -61,18 +61,28 @@ namespace nJsonSchema.Console
             {
                 tDirInfo.Create();
             }
-
-            var schemasFiles = sDirInfo.GetFiles().ToList().Where((f) =>
-            {
-                return f.Extension.ToLower().Equals(".json");
-            });
-
+            //get only .json files
+            var schemasFiles = sDirInfo.GetFiles().ToList().Where((f) => f.Extension.ToLower().Equals(".json")).ToList();
+            System.Console.WriteLine("found {0} json schema files", schemasFiles.Count());
             foreach (FileInfo schemafile in schemasFiles)
             {
-                var schema = JsonSchema4.FromFile(schemafile.FullName);
-                var generator = new TypeScriptGenerator(schema);
-                var typeScript = generator.GenerateFile();
-                Save(sDirInfo, tDirInfo, schemafile, typeScript, ".ts");
+                var schemaName = Path.GetFileNameWithoutExtension(schemafile.Name);
+                System.Console.WriteLine("generating {0} ", schemaName + ".ts");
+                try
+                {
+                    var schema = JsonSchema4.FromFile(schemafile.FullName);
+                    var generator = new TypeScriptGenerator(schema);
+                    var typeScript = generator.GenerateFile();
+                    Save(sDirInfo, tDirInfo, schemafile, typeScript, ".ts");
+                }
+                catch (Exception ex)
+                {
+                    System.Console.WriteLine("Exception: {0} ", ex.Message);
+                    System.Console.WriteLine("Overstep and continue generating remaining?");
+                    if (!GetYesOrNoUserInput())
+                        return;
+                }
+                
             }
             
         }
@@ -87,6 +97,29 @@ namespace nJsonSchema.Console
             {
                 sw.Write(data);
             }
+        }
+
+        static bool GetYesOrNoUserInput()
+        {
+            ConsoleKey response; // Creates a variable to hold the user's response.
+
+            do
+            {
+                while (System.Console.KeyAvailable) // Flushes the input queue.
+                    System.Console.ReadKey();
+
+                System.Console.Write("Y or N? "); // Asks the user to answer with 'Y' or 'N'.
+                response = System.Console.ReadKey().Key; // Gets the user's response.
+                System.Console.WriteLine(); // Breaks the line.
+            } while (response != ConsoleKey.Y && response != ConsoleKey.N); // If the user did not respond with a 'Y' or an 'N', repeat the loop.
+
+            /* 
+             * Return true if the user responded with 'Y', otherwise false.
+             * 
+             * We know the response was either 'Y' or 'N', so we can assume 
+             * the response is 'N' if it is not 'Y'.
+             */
+            return response == ConsoleKey.Y;
         }
     }
 }
