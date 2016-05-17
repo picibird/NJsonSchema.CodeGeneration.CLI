@@ -24,21 +24,30 @@ namespace nJsonSchema.Console
                 ShowUsageOnEmptyCommandline = true
             };
 
-            DirectoryArgument sourceDirArg = new DirectoryArgument('s', "source", "source directory with json schema files")
+            DirectoryArgument schemaDirArg = new DirectoryArgument('s', "schema", "json schema source directory")
             {
                 Optional = false,
                 DirectoryMustExist = true
             };
-            DirectoryArgument targetDirArg = new DirectoryArgument('t', "target", "target directory with typescript  files")
+            DirectoryArgument typeScriptDirArg = new DirectoryArgument('t', "typescript", "typescript target directory")
             {
-                Optional = false,
+                Optional = true,
                 DirectoryMustExist = false
             };
-            SwitchArgument showArgument = new SwitchArgument('r', "recursive", "recursive parsing from source directory", false);
+            DirectoryArgument cSharpDirArg = new DirectoryArgument('c', "csharp", "c# target directory")
+            {
+                Optional = true,
+                DirectoryMustExist = false
+            };
 
-            parser.Arguments.Add(sourceDirArg);
-            parser.Arguments.Add(targetDirArg);
-            parser.Arguments.Add(showArgument);
+            SwitchArgument interactive = new SwitchArgument('i', "interactive", "interactive yes/no to continue", false);
+            SwitchArgument recursive = new SwitchArgument('r', "recursive", "recursive parsing from source directory", false);
+
+            parser.Arguments.Add(schemaDirArg);
+            parser.Arguments.Add(typeScriptDirArg);
+            parser.Arguments.Add(cSharpDirArg);
+            //parser.Arguments.Add(interactive);
+            //parser.Arguments.Add(recursive);
 
 
             try
@@ -59,12 +68,29 @@ namespace nJsonSchema.Console
             }
 
 
-            var sDirInfo = sourceDirArg.DirectoryInfo;
-            var tDirInfo = targetDirArg.DirectoryInfo;
+            if (typeScriptDirArg.DirectoryInfo == null && 
+                cSharpDirArg.DirectoryInfo == null)
+            {
+                System.Console.WriteLine("TypeScript and/or C# target directory missing");
+                System.Console.WriteLine("press any key to continue");
+                System.Console.ReadKey();
+                return;
+            }
+
+            var sDirInfo = schemaDirArg.DirectoryInfo;
+            var tDirInfo = typeScriptDirArg.DirectoryInfo;
+            var cDirInfo = cSharpDirArg.DirectoryInfo;
             if (!tDirInfo.Exists)
             {
                 tDirInfo.Create();
             }
+            if (!cDirInfo.Exists)
+            {
+                cDirInfo.Create();
+            }
+
+
+
             //get only .json files
             var schemasFiles = sDirInfo.GetFiles().ToList().Where((f) => f.Extension.ToLower().Equals(".json")).ToList();
             System.Console.WriteLine("found {0} json schema files", schemasFiles.Count());
@@ -74,9 +100,22 @@ namespace nJsonSchema.Console
                 try
                 {
                     var schema = JsonSchema4.FromFile(schemafile.FullName);
-                    var generator = new TypeScriptGenerator(schema);
-                    var typeScript = generator.GenerateFile();
-                    Save(sDirInfo, tDirInfo, schemafile, typeScript, ".ts");
+                    //typescript
+                    if (tDirInfo != null)
+                    {
+                        
+                        var generator = new TypeScriptGenerator(schema);
+                        var typeScript = generator.GenerateFile();
+                        Save(sDirInfo, tDirInfo, schemafile, typeScript, ".ts");
+                    }
+                    //c#
+                    if (cDirInfo != null)
+                    {
+                        var generator = new CSharpGenerator(schema);
+                        var cSharp = generator.GenerateFile();
+                        Save(sDirInfo, cDirInfo, schemafile, cSharp, ".cs");
+                    }
+
                 }
                 catch (Exception ex)
                 {
@@ -95,8 +134,9 @@ namespace nJsonSchema.Console
 
         private static void Save(DirectoryInfo source, DirectoryInfo target, FileInfo schema, string data, string fileExtension)
         {
-            string filePath = Path.Combine(target.FullName,
-                Path.GetFileNameWithoutExtension(schema.Name) + fileExtension);
+            string fileName = Path.GetFileNameWithoutExtension(schema.Name);
+            fileName = fileName.Replace(".schema", "");
+            string filePath = Path.Combine(target.FullName, fileName + fileExtension);
             var file = new FileInfo(filePath);
             if (!file.Exists) file.Create().Close();
             using (StreamWriter sw = file.CreateText())
