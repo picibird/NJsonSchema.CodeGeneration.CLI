@@ -1,7 +1,16 @@
 # NJsonSchema.CodeGeneration.CLI
 Command Line Interface to parse json schemas to typescript or c# using [NJsonSchema.CodeGeneration](https://github.com/NJsonSchema/NJsonSchema).
 
-Debug with arguments "-s ../../../schemas -t ../../../typeScripts" to generate sample schemas.
+## Usage
+```
+        -s, --schema... json schema source directory
 
-CLI Arguments:
-coming soon
+        -t, --typescript[optional]... typescript target directory
+
+        -c, --csharp[optional]... c# target directory
+```
+
+## Visual Studio Debug Args
+```
+-s ../../../schemas -t ../../../typeScripts -c ../../../cSharp
+```
