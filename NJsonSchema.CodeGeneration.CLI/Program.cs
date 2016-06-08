@@ -80,11 +80,11 @@ namespace nJsonSchema.Console
             var sDirInfo = schemaDirArg.DirectoryInfo;
             var tDirInfo = typeScriptDirArg.DirectoryInfo;
             var cDirInfo = cSharpDirArg.DirectoryInfo;
-            if (!tDirInfo.Exists)
+            if (tDirInfo != null && !tDirInfo.Exists)
             {
                 tDirInfo.Create();
             }
-            if (!cDirInfo.Exists)
+            if (cDirInfo != null && !cDirInfo.Exists)
             {
                 cDirInfo.Create();
             }
