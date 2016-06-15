@@ -1,7 +1,7 @@
 {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "type": "object",
-    "types": {
+    "definitions": {
         "URI": {
             "type": "string",
             "format": "uri"
@@ -34,15 +34,15 @@
         },
         "service": {
             "anyOf": [
-                { "$ref": "#/types/URI" },
+                { "$ref": "#/definitions/URI" },
                 { "enum": ["presentation","loan","remote","interloan","openaccess"] }
             ]
         },
         "entity": {
             "type": "object",
             "properties": {
-                "id": { "$ref": "#/types/URI" },
-                "href": { "$ref": "#/types/URL" },
+                "id": { "$ref": "#/definitions/URI" },
+                "href": { "$ref": "#/definitions/URL" },
                 "content": { "type": "string" }
             },
             "additionalProperties": false
@@ -50,13 +50,13 @@
         "document": {
             "type": "object",
             "properties": {
-                "id": { "$ref": "#/types/URI" },
+                "id": { "$ref": "#/definitions/URI" },
                 "requested": { "type": "string" },
-                "href": { "$ref": "#/types/URL" },
+                "href": { "$ref": "#/definitions/URL" },
                 "about": { "type": "string" },
                 "item": {
                     "type": "array",
-                    "items": { "$ref": "#/types/item" }
+                    "items": { "$ref": "#/definitions/item" }
                 }
             },
             "required": ["id"],
@@ -65,20 +65,20 @@
         "item": {
             "type": "object",
             "properties": {
-                "id": { "$ref": "#/types/URI" },
-                "href": { "$ref": "#/types/URL" },
+                "id": { "$ref": "#/definitions/URI" },
+                "href": { "$ref": "#/definitions/URL" },
                 "part": { "enum": [ "broader", "narrower" ] },
                 "label": { "type": "string" },
                 "about": { "type": "string" },
-                "department": { "$ref": "#/types/entity" },
-                "storage": { "$ref": "#/types/entity" },
+                "department": { "$ref": "#/definitions/entity" },
+                "storage": { "$ref": "#/definitions/entity" },
                 "available": {
                     "type": "array",
-                    "items": { "$ref": "#/types/available" }
+                    "items": { "$ref": "#/definitions/available" }
                 },
                 "unavailable": {
                     "type": "array",
-                    "items": { "$ref": "#/types/unavailable" }
+                    "items": { "$ref": "#/definitions/unavailable" }
                 }
             },
             "additionalProperties": false
@@ -86,12 +86,12 @@
         "available": {
             "type": "object",
             "properties": {
-                "service": { "$ref": "#/types/service" },
-                "href": { "$ref": "#/types/URL" },
-                "delay": { "$ref": "#/types/duration" },
+                "service": { "$ref": "#/definitions/service" },
+                "href": { "$ref": "#/definitions/URL" },
+                "delay": { "$ref": "#/definitions/duration" },
                 "limitation": {
                     "type": "array",
-                    "items": { "$ref": "#/types/entity" }
+                    "items": { "$ref": "#/definitions/entity" }
                 }
             },
             "required": ["service"],
@@ -100,25 +100,25 @@
         "unavailable": {
             "type": "object",
             "properties": {
-                "service": { "$ref": "#/types/service" },
-                "href": { "$ref": "#/types/URL" },
-                "expected": { "$ref": "#/types/anydate" },
-                "queue": { "$ref": "#/types/count" },
+                "service": { "$ref": "#/definitions/service" },
+                "href": { "$ref": "#/definitions/URL" },
+                "expected": { "$ref": "#/definitions/anydate" },
+                "queue": { "$ref": "#/definitions/count" },
                 "limitation": {
                     "type": "array",
-                    "items": { "$ref": "#/types/entity" }
+                    "items": { "$ref": "#/definitions/entity" }
                 }
             },
             "additionalProperties": false
         }
     },
     "properties": {
-        "institution": { "$ref": "#/types/entity" },
+        "institution": { "$ref": "#/definitions/entity" },
         "document": {
             "type": "array",
-            "items": { "$ref": "#/types/document" }
+            "items": { "$ref": "#/definitions/document" }
         },
-        "timestamp": { "$ref": "#/types/datetime" }
+        "timestamp": { "$ref": "#/definitions/datetime" }
     },
     "additionalProperties": false
 }
