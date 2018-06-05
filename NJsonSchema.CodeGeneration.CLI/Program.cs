@@ -17,7 +17,11 @@ namespace nJsonSchema.Console
     {
         static void Main(string[] args)
         {
+            MainAsync(args).Wait();
+        }
 
+        static async Task MainAsync(string[] args)
+        {
             CommandLineParser.CommandLineParser parser = new CommandLineParser.CommandLineParser()
             {
                 CheckMandatoryArguments = true,
@@ -68,7 +72,7 @@ namespace nJsonSchema.Console
             }
 
 
-            if (typeScriptDirArg.DirectoryInfo == null && 
+            if (typeScriptDirArg.DirectoryInfo == null &&
                 cSharpDirArg.DirectoryInfo == null)
             {
                 System.Console.WriteLine("TypeScript and/or C# target directory missing");
@@ -99,11 +103,11 @@ namespace nJsonSchema.Console
                 System.Console.WriteLine("generating from {0} to", schemafile.Name);
                 try
                 {
-                    var schema = JsonSchema4.FromFile(schemafile.FullName);
+                    var schema = await JsonSchema4.FromFileAsync(schemafile.FullName);
                     //typescript
                     if (tDirInfo != null)
                     {
-                        
+
                         var generator = new TypeScriptGenerator(schema);
                         var typeScript = generator.GenerateFile();
                         Save(sDirInfo, tDirInfo, schemafile, typeScript, ".ts");
@@ -124,12 +128,13 @@ namespace nJsonSchema.Console
                     if (!GetYesOrNoUserInput())
                         return;
                 }
-                
+
             }
             //exit
             System.Console.WriteLine("Done!");
             System.Console.WriteLine("Press any key to exit.");
             System.Console.ReadKey();
+
         }
 
         private static void Save(DirectoryInfo source, DirectoryInfo target, FileInfo schema, string data, string fileExtension)
