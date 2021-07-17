@@ -1,0 +1,99 @@
+name: .NET Core Build and Publish
+
+on:
+  push:
+    branches: master
+  pull_request:
+    branches: master
+
+env:
+  NETCORE_VERSION: '5.x'  
+  GIT_REPO_ROOT: src
+  MAJOR_MINOR_VERSION: 1.1.
+  SOLUTION_FILE: NJsonSchema.CodeGeneration.CLI.sln
+  CSPROJ_NAME: NJsonSchema.CodeGeneration.CLI
+
+jobs:
+  build:
+    name: Build Package 
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup .NET Core SDK ${{ env.NETCORE_VERSION }}
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: ${{ env.NETCORE_VERSION }}
+
+    - name: Restore
+      working-directory: ${{ env.GIT_REPO_ROOT }}        
+      run: dotnet restore ${{ env.SOLUTION_FILE }}
+
+    - name: Build
+      working-directory: ${{ env.GIT_REPO_ROOT }}        
+      run: dotnet build ${{ env.SOLUTION_FILE }} --configuration Debug --no-restore
+
+    # - name: Run Unit Tests and Generate Coverage
+    #   uses: glennawatson/coverlet-msbuild@v1
+    #   with:
+    #     project-files: '**/*Tests.csproj'
+    #     no-build: true  
+    #     output-format: cobertura
+    #     output: results
+    #     configuration: Debug
+
+    # - uses: codecov/codecov-action@v1
+    #   with:
+    #     files: src/... # optional
+    #     fail_ci_if_error: true # optional (default = false)
+
+  deploy:
+    needs: build
+    #if: github.ref == 'refs/heads/master'
+    name: Deploy Packages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup .NET Core SDK
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: ${{ env.NETCORE_VERSION }}
+
+      - name: publish build for Windows
+        run: dotnet publish src/${{ env.CSPROJ_NAME }}/${{ env.CSPROJ_NAME }}.csproj /p:PublishSingleFile=true -r win-x64 -c Release --self-contained 
+
+      - name: publish build for Linux
+        run: dotnet publish src/${{ env.CSPROJ_NAME }}/${{ env.CSPROJ_NAME }}.csproj /p:PublishSingleFile=true -r linux-x64 -c Release --self-contained 
+
+      - name: Compress Linux
+        run: |
+          cd src/${{ env.CSPROJ_NAME }}/bin/Release/net5.0/win-x64/publish;
+          zip -r win-x64.zip .;
+          cd ..;cd ..;cd ..;cd ..;cd ..;cd ..;cd ..;
+          cd src/${{ env.CSPROJ_NAME }}/bin/Release/net5.0/linux-x64/publish;
+          zip -r linux-x64.zip .;
+
+      - name: Create tag
+        uses: actions/github-script@v3
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            github.git.createRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: "refs/tags/v${{ env.MAJOR_MINOR_VERSION }}${{ github.run_number }}",
+              sha: context.sha
+            })
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ env.MAJOR_MINOR_VERSION }}${{ github.run_number }}
+          name: Release ${{ env.MAJOR_MINOR_VERSION }}${{ github.run_number }}
+          fail_on_unmatched_files: true
+          files: | 
+                 src/${{ env.CSPROJ_NAME }}/bin/Release/net5.0/linux-x64/publish/linux-x64.zip
+                 src/${{ env.CSPROJ_NAME }}/bin/Release/net5.0/win-x64/publish/win-x64.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
