@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <ProjectGuid>{65FF4E37-A37A-45CC-9192-5496ACF7ADD2}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>NJsonSchema.CodeGeneration.CLI</RootNamespace>
+    <AssemblyName>nJsonSchemaCodeGeneration</AssemblyName>
+    <TargetFramework>net5.0</TargetFramework>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <AssemblyTitle>nJsonSchema.Console</AssemblyTitle>
+    <Product>nJsonSchema.Console</Product>
+    <Copyright>Copyright ©  2016</Copyright>
+    <OutputPath>bin\$(Configuration)\</OutputPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="CommandLineArgumentsParser" Version="3.0.22" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="NJsonSchema" Version="10.4.5" />
+    <PackageReference Include="NJsonSchema.CodeGeneration" Version="10.4.5" />
+    <PackageReference Include="NJsonSchema.CodeGeneration.CSharp" Version="10.4.5" />
+    <PackageReference Include="NJsonSchema.CodeGeneration.TypeScript" Version="10.4.5" />
+    <PackageReference Include="ReflectionBridge" Version="0.0.13" />
+  </ItemGroup>
+</Project>

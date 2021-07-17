@@ -1,8 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
+using System.Net.Http;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using CommandLineParser.Arguments;
@@ -11,49 +10,51 @@ using NJsonSchema;
 using NJsonSchema.CodeGeneration.CSharp;
 using NJsonSchema.CodeGeneration.TypeScript;
 
-namespace nJsonSchema.Console
+namespace NJsonSchema.CodeGeneration.CLI.Console
 {
     class Program
     {
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
 
-            CommandLineParser.CommandLineParser parser = new CommandLineParser.CommandLineParser()
+            var parser = new CommandLineParser.CommandLineParser()
             {
                 CheckMandatoryArguments = true,
                 ShowUsageOnEmptyCommandline = true
             };
 
-            DirectoryArgument schemaDirArg = new DirectoryArgument('s', "schema", "json schema source directory")
+            var schemaHttpArg = new ValueArgument<string>('r', "remote", "json schema source http address")
             {
-                Optional = false,
-                DirectoryMustExist = true
+                Optional = true
             };
-            DirectoryArgument typeScriptDirArg = new DirectoryArgument('t', "typescript", "typescript target directory")
+            var namespaceArg = new ValueArgument<string>('n', "namespace", "Namespace of generated code")
+            {
+                Optional = true
+            };
+            var schemaDirArg = new DirectoryArgument('s', "schema", "json schema source directory")
+            {
+                Optional = true
+            };
+            var typeScriptDirArg = new DirectoryArgument('t', "typescript", "typescript target directory")
             {
                 Optional = true,
                 DirectoryMustExist = false
             };
-            DirectoryArgument cSharpDirArg = new DirectoryArgument('c', "csharp", "c# target directory")
+            var cSharpDirArg = new DirectoryArgument('c', "csharp", "c# target directory")
             {
                 Optional = true,
                 DirectoryMustExist = false
             };
-
-            SwitchArgument interactive = new SwitchArgument('i', "interactive", "interactive yes/no to continue", false);
-            SwitchArgument recursive = new SwitchArgument('r', "recursive", "recursive parsing from source directory", false);
-
+            
             parser.Arguments.Add(schemaDirArg);
             parser.Arguments.Add(typeScriptDirArg);
             parser.Arguments.Add(cSharpDirArg);
-            //parser.Arguments.Add(interactive);
-            //parser.Arguments.Add(recursive);
-
+            parser.Arguments.Add(schemaHttpArg);
+            parser.Arguments.Add(namespaceArg);
 
             try
             {
                 parser.ParseCommandLine(args);
-                //parser.ShowParsedArguments();
                 if (!parser.ParsingSucceeded)
                     return;
             }
@@ -67,7 +68,6 @@ namespace nJsonSchema.Console
                 return;
             }
 
-
             if (typeScriptDirArg.DirectoryInfo == null && 
                 cSharpDirArg.DirectoryInfo == null)
             {
@@ -76,8 +76,30 @@ namespace nJsonSchema.Console
                 System.Console.ReadKey();
                 return;
             }
+            if (schemaDirArg.DirectoryInfo == null &&
+                schemaHttpArg.Value == null)
+            {
+                System.Console.WriteLine("Either Source Url or Source Directory must be provided");
+                System.Console.WriteLine("press any key to continue");
+                System.Console.ReadKey();
+                return;
+            }
 
-            var sDirInfo = schemaDirArg.DirectoryInfo;
+            DirectoryInfo sDirInfo = null;
+            if (schemaHttpArg.Value != null)
+            {
+                if (!Directory.Exists("temp")) Directory.CreateDirectory("temp");
+
+                var client = new HttpClient();
+                var stream = await client.GetByteArrayAsync(schemaHttpArg.Value);
+                await File.WriteAllBytesAsync("temp/target.json", stream);
+                sDirInfo = new DirectoryInfo("temp");
+            }
+            else
+            {
+                sDirInfo = schemaDirArg.DirectoryInfo;
+            }
+            
             var tDirInfo = typeScriptDirArg.DirectoryInfo;
             var cDirInfo = cSharpDirArg.DirectoryInfo;
             if (tDirInfo != null && !tDirInfo.Exists)
@@ -89,21 +111,18 @@ namespace nJsonSchema.Console
                 cDirInfo.Create();
             }
 
-
-
             //get only .json files
             var schemasFiles = sDirInfo.GetFiles().ToList().Where((f) => f.Extension.ToLower().Equals(".json")).ToList();
             System.Console.WriteLine("found {0} json schema files", schemasFiles.Count());
-            foreach (FileInfo schemafile in schemasFiles)
+            foreach (var schemafile in schemasFiles)
             {
                 System.Console.WriteLine("generating from {0} to", schemafile.Name);
                 try
                 {
-                    var schema = JsonSchema4.FromFile(schemafile.FullName);
+                    var schema = await JsonSchema.FromFileAsync(schemafile.FullName);
                     //typescript
                     if (tDirInfo != null)
                     {
-                        
                         var generator = new TypeScriptGenerator(schema);
                         var typeScript = generator.GenerateFile();
                         Save(sDirInfo, tDirInfo, schemafile, typeScript, ".ts");
@@ -111,11 +130,16 @@ namespace nJsonSchema.Console
                     //c#
                     if (cDirInfo != null)
                     {
-                        var generator = new CSharpGenerator(schema);
+                        var generator = new CSharpGenerator(schema, new CSharpGeneratorSettings()
+                        {
+                            Namespace = namespaceArg.Value ?? "Root",
+                            PropertyNameGenerator = new AgodaPropertyNameGenerator(),
+                            EnumNameGenerator = new AgodaEnumNameGenerator(),
+                            TypeNameGenerator = new AgodaTypeNameGenerator(),
+                        });
                         var cSharp = generator.GenerateFile();
                         Save(sDirInfo, cDirInfo, schemafile, cSharp, ".cs");
                     }
-
                 }
                 catch (Exception ex)
                 {
@@ -124,7 +148,6 @@ namespace nJsonSchema.Console
                     if (!GetYesOrNoUserInput())
                         return;
                 }
-                
             }
             //exit
             System.Console.WriteLine("Done!");
@@ -134,12 +157,12 @@ namespace nJsonSchema.Console
 
         private static void Save(DirectoryInfo source, DirectoryInfo target, FileInfo schema, string data, string fileExtension)
         {
-            string fileName = Path.GetFileNameWithoutExtension(schema.Name);
+            var fileName = Path.GetFileNameWithoutExtension(schema.Name);
             fileName = fileName.Replace(".schema", "");
-            string filePath = Path.Combine(target.FullName, fileName + fileExtension);
+            var filePath = Path.Combine(target.FullName, fileName + fileExtension);
             var file = new FileInfo(filePath);
             if (!file.Exists) file.Create().Close();
-            using (StreamWriter sw = file.CreateText())
+            using (var sw = file.CreateText())
             {
                 sw.Write(data);
             }
